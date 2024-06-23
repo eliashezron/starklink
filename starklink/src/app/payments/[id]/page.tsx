@@ -4,11 +4,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useConnect, useDisconnect, useAccount } from "@starknet-react/core";
-import Modal from "../../../components/Connect-Modal"; // Adjust the import path as necessary
+import Modal from "../../../components/Connect-Modal";
+import starknetAbi from "../../utils/abi.json";
+import { RpcProvider, Contract, AccountInterface, cairo } from "starknet";
 
 interface PaymentDetailsType {
   reason: string;
-  amount: string;
+  amount: number;
   currency: string;
   address: string;
 }
@@ -45,13 +47,26 @@ export default function PaymentDetails() {
     }
 
     try {
-      const transaction = await account.execute({
-        contractAddress: paymentDetails.address,
-        entrypoint: "transfer", // Update with the correct entrypoint for your contract
-        calldata: [paymentDetails.amount], // Update with the correct calldata for your contract
-      });
-
-      console.log("Transaction submitted:", transaction);
+        const starknetUsdcAddress =
+        "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8";
+        const starknetStrkAddress = "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
+        if (!paymentDetails) return;
+        const StarknetRecipientAddress = paymentDetails.address;
+        const amount= paymentDetails.amount;
+        const starknetContract = new Contract(
+            starknetAbi,
+            paymentDetails.currency === 'USDC' ? starknetUsdcAddress : starknetStrkAddress,
+            account
+          );
+          const approve = await starknetContract.approve(
+            StarknetRecipientAddress,
+            paymentDetails.currency === 'USDC' ? cairo.uint256(String(amount * 1000000)) : cairo.uint256(String(amount * 1000000000000000000))
+          ); 
+          console.log("Approve", approve);
+          await starknetContract.transfer(
+            StarknetRecipientAddress,
+            paymentDetails.currency === 'USDC' ? cairo.uint256(String(amount * 1000000)) : cairo.uint256(String(amount * 1000000000000000000))
+          ); 
       alert("Payment made successfully!");
     } catch (error) {
       console.error("Payment failed:", error);
@@ -61,6 +76,10 @@ export default function PaymentDetails() {
 
   if (!paymentDetails) {
     return <p>Loading...</p>;
+  }
+
+  const starknetPay = async () => {
+   
   }
 
   return (
