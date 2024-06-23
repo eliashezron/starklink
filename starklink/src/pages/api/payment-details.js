@@ -1,5 +1,4 @@
-// src/pages/api/payment-details.js
-const paymentLinks = new Map();
+import paymentLinks from '../../data/paymentLinks';
 
 export default function handler(req, res) {
   const { id } = req.query;

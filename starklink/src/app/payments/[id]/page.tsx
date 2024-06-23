@@ -1,10 +1,8 @@
-// src/app/payments/[id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
-// Define the structure of payment details
 interface PaymentDetailsType {
   reason: string;
   amount: string;
@@ -17,12 +15,10 @@ export default function PaymentDetails() {
   const router = useRouter();
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetailsType | null>(null);
 
-  // Safely extract the `id` from params
   const id = params?.id as string;
 
   useEffect(() => {
     if (id) {
-      // Fetch payment details from the server
       fetch(`/api/payment-details?id=${id}`)
         .then(res => res.json())
         .then(data => setPaymentDetails(data))

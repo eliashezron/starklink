@@ -1,11 +1,14 @@
-// src/pages/api/create-payment-link.js
 import { v4 as uuidv4 } from 'uuid';
-
-const paymentLinks = new Map();
+import paymentLinks from '../../data/paymentLinks';
 
 export default function handler(req, res) {
   if (req.method === 'POST') {
     const { reason, amount, currency, address } = req.body;
+
+    if (!reason || !amount || !currency || !address) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
     const id = uuidv4();
     const link = `${process.env.NEXT_PUBLIC_BASE_URL}/payments/${id}`;
 
