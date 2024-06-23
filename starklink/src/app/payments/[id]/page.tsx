@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useConnect, useDisconnect, useAccount } from "@starknet-react/core";
+import Modal from "../../../components/Connect-Modal"; // Adjust the import path as necessary
 
 interface PaymentDetailsType {
   reason: string;
@@ -14,11 +15,12 @@ interface PaymentDetailsType {
 
 export default function PaymentDetails() {
   const { account } = useAccount();
-const { connect, connectors } = useConnect();
-const { disconnect} = useDisconnect();
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
   const params = useParams();
   const router = useRouter();
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetailsType | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   const id = params?.id as string;
 
@@ -30,6 +32,11 @@ const { disconnect} = useDisconnect();
         .catch(() => router.push('/404'));
     }
   }, [id, router]);
+
+  const handleConnect = async (connector: any) => {
+    await connect({ connector });
+    setShowModal(false); // Close modal after connection
+  };
 
   const makePayment = async () => {
     if (!account || !paymentDetails) {
@@ -79,15 +86,26 @@ const { disconnect} = useDisconnect();
             </button>
           </>
         ) : (
-          connectors.map(connector => (
+          <>
             <button
-              key={connector.id}
-              onClick={() => connect({ connector })}
+              onClick={() => setShowModal(true)}
               className="w-full mt-4 bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700"
             >
-              Connect {connector.name}
+              Connect Wallet
             </button>
-          ))
+            <Modal show={showModal} onClose={() => setShowModal(false)}>
+              <h2 className="text-xl mb-4">Choose a Wallet</h2>
+              {connectors.map(connector => (
+                <button
+                  key={connector.id}
+                  onClick={() => handleConnect(connector)}
+                  className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 mb-2"
+                >
+                  Connect {connector.name}
+                </button>
+              ))}
+            </Modal>
+          </>
         )}
       </div>
     </div>
