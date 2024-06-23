@@ -10,10 +10,12 @@
   },
   "dependencies": {
     "@next-auth/firebase-adapter": "^2.0.1",
+    "@starknet-react/core": "^2.8.2",
     "next": "14.2.4",
     "next-auth": "^4.24.7",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "starknet": "^5.24.3"
   },
   "devDependencies": {
     "@types/node": "^20",
