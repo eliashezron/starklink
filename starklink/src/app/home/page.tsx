@@ -4,12 +4,13 @@
 import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { addDoc, collection } from "firebase/firestore";
+import { db } from "../../firebase/config"
 
 export default function HomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // State to hold form data
   const [paymentDetails, setPaymentDetails] = useState({
     reason: "",
     amount: "",
@@ -25,21 +26,23 @@ export default function HomePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Call API to save payment details and generate a link
-    const res = await fetch('/api/create-payment-link', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(paymentDetails),
-    });
+    if (!session || !session.user) {
+      alert("Please sign in to create a payment link.");
+      return;
+    }
 
-    const data = await res.json();
-    if (data.success) {
-      // Redirect to the generated link or display it
-      alert(`Payment link created: ${data.link}`);
-    } else {
-      alert('Error creating payment link');
+    try {
+      const docRef = await addDoc(collection(db, "paymentLinks"), {
+        ...paymentDetails,
+        user: session.user.email,
+        createdAt: new Date(),
+      });
+
+      const link = `${process.env.NEXT_PUBLIC_BASE_URL}/payments/${docRef.id}`;
+      alert(`Payment link created: ${link}`);
+    } catch (error) {
+      console.error("Error adding document: ", error);
+      alert("Error creating payment link");
     }
   };
 

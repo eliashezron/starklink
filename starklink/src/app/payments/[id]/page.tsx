@@ -6,13 +6,16 @@ import { useParams, useRouter } from "next/navigation";
 import { useConnect, useDisconnect, useAccount } from "@starknet-react/core";
 import Modal from "../../../components/Connect-Modal";
 import starknetAbi from "../../utils/abi.json";
-import { RpcProvider, Contract, AccountInterface, cairo } from "starknet";
+import { Contract, cairo } from "starknet";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../../firebase/config";
 
 interface PaymentDetailsType {
   reason: string;
   amount: number;
   currency: string;
   address: string;
+  sharedWith?: string[]; // New field for sharing information
 }
 
 export default function PaymentDetails() {
@@ -27,12 +30,24 @@ export default function PaymentDetails() {
   const id = params?.id as string;
 
   useEffect(() => {
-    if (id) {
-      fetch(`/api/payment-details?id=${id}`)
-        .then(res => res.json())
-        .then(data => setPaymentDetails(data))
-        .catch(() => router.push('/404'));
-    }
+    const fetchPaymentDetails = async () => {
+      if (id) {
+        try {
+          const docRef = doc(db, "paymentLinks", id);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setPaymentDetails(docSnap.data() as PaymentDetailsType);
+          } else {
+            router.push('/404');
+          }
+        } catch (error) {
+          console.error("Error fetching document: ", error);
+          router.push('/404');
+        }
+      }
+    };
+    
+    fetchPaymentDetails();
   }, [id, router]);
 
   const handleConnect = async (connector: any) => {
@@ -47,26 +62,25 @@ export default function PaymentDetails() {
     }
 
     try {
-        const starknetUsdcAddress =
-        "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8";
-        const starknetStrkAddress = "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
-        if (!paymentDetails) return;
-        const StarknetRecipientAddress = paymentDetails.address;
-        const amount= paymentDetails.amount;
-        const starknetContract = new Contract(
-            starknetAbi,
-            paymentDetails.currency === 'USDC' ? starknetUsdcAddress : starknetStrkAddress,
-            account
-          );
-          const approve = await starknetContract.approve(
-            StarknetRecipientAddress,
-            paymentDetails.currency === 'USDC' ? cairo.uint256(String(amount * 1000000)) : cairo.uint256(String(amount * 1000000000000000000))
-          ); 
-          console.log("Approve", approve);
-          await starknetContract.transfer(
-            StarknetRecipientAddress,
-            paymentDetails.currency === 'USDC' ? cairo.uint256(String(amount * 1000000)) : cairo.uint256(String(amount * 1000000000000000000))
-          ); 
+      const starknetUsdcAddress = "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8";
+      const starknetStrkAddress = "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
+      if (!paymentDetails) return;
+      const starknetRecipientAddress = paymentDetails.address;
+      const amount = paymentDetails.amount;
+      const starknetContract = new Contract(
+        starknetAbi,
+        paymentDetails.currency === 'USDC' ? starknetUsdcAddress : starknetStrkAddress,
+        account
+      );
+      const approve = await starknetContract.approve(
+        starknetRecipientAddress,
+        paymentDetails.currency === 'USDC' ? cairo.uint256(String(amount * 1000000)) : cairo.uint256(String(amount * 1000000000000000000))
+      );
+      console.log("Approve", approve);
+      await starknetContract.transfer(
+        starknetRecipientAddress,
+        paymentDetails.currency === 'USDC' ? cairo.uint256(String(amount * 1000000)) : cairo.uint256(String(amount * 1000000000000000000))
+      );
       alert("Payment made successfully!");
     } catch (error) {
       console.error("Payment failed:", error);
@@ -78,10 +92,6 @@ export default function PaymentDetails() {
     return <p>Loading...</p>;
   }
 
-  const starknetPay = async () => {
-   
-  }
-
   return (
     <div className="flex items-center justify-center h-screen bg-gray-100">
       <div className="p-8 bg-white rounded shadow-md">
@@ -89,6 +99,16 @@ export default function PaymentDetails() {
         <p><strong>Reason:</strong> {paymentDetails.reason}</p>
         <p><strong>Amount:</strong> {paymentDetails.amount} {paymentDetails.currency}</p>
         <p><strong>Address:</strong> {paymentDetails.address}</p>
+        {paymentDetails.sharedWith && paymentDetails.sharedWith.length > 0 && (
+          <>
+            <h2 className="text-xl font-bold text-center mt-4 mb-2">Shared With</h2>
+            <ul>
+              {paymentDetails.sharedWith.map(email => (
+                <li key={email} className="text-gray-700">{email}</li>
+              ))}
+            </ul>
+          </>
+        )}
         {account ? (
           <>
             <button
