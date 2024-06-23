@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { addDoc, collection } from "firebase/firestore";
-import { db } from "../../firebase/config"
+import { db } from "../../firebase/config";
 
 export default function HomePage() {
   const { data: session, status } = useSession();
@@ -36,10 +36,12 @@ export default function HomePage() {
         ...paymentDetails,
         user: session.user.email,
         createdAt: new Date(),
+        status: "pending",
       });
 
-      const link = `${process.env.NEXT_PUBLIC_BASE_URL}/payments/${docRef.id}`;
-      alert(`Payment link created: ${link}`);
+      console.log("Payment link created:", docRef.id); 
+
+      router.push("/dashboard"); 
     } catch (error) {
       console.error("Error adding document: ", error);
       alert("Error creating payment link");

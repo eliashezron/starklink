@@ -11,6 +11,7 @@
   "dependencies": {
     "@next-auth/firebase-adapter": "^2.0.1",
     "@starknet-react/core": "^2.8.2",
+    "copy-to-clipboard": "^3.3.3",
     "firebase": "^10.12.2",
     "next": "14.2.4",
     "next-auth": "^4.24.7",

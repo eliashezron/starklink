@@ -7,7 +7,7 @@ import { useConnect, useDisconnect, useAccount } from "@starknet-react/core";
 import Modal from "../../../components/Connect-Modal";
 import starknetAbi from "../../utils/abi.json";
 import { Contract, cairo } from "starknet";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../../../firebase/config";
 
 interface PaymentDetailsType {
@@ -81,6 +81,8 @@ export default function PaymentDetails() {
         starknetRecipientAddress,
         paymentDetails.currency === 'USDC' ? cairo.uint256(String(amount * 1000000)) : cairo.uint256(String(amount * 1000000000000000000))
       );
+      const docRef = doc(db, "paymentLinks", id);
+      await updateDoc(docRef, { status: "completed" }); // Update status to completed
       alert("Payment made successfully!");
     } catch (error) {
       console.error("Payment failed:", error);
